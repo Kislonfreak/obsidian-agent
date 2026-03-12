@@ -1,20 +1,40 @@
-# ObsidianAgent v0.2.4 — Smart Routing
+# ObsidianAgent v0.3.0 — Skills Pack + Skill Editor
 
-## Zmiany względem v0.2.3
+## Zmiany względem v0.2.5
 
-### ⚡ Ulepszenia
+### ✨ 11 nowych umiejętności standardowych
 
-**Router Rozszerzony modele (zero latencji)**
-- Całkowita przebudowa `wykryjRole()` — teraz 3 wyrawne kategoria z bogatymi listami słoń kluczy
-- Wizja: `obraz`, `zdjęcie`, `foto`, `zrzut ekranu`, `wygląda`, `widzisz`, `na zdjęciu` i inne
-- Myślenie (`qwen3:8b`): zadania twórcze, analityczne, jeżykowe — `opisz`, `porównaj`, `przetołumacz`, `Napisz`, `popraw`, `ulepsz`, `e-mail`, `rapport`, `co sądzisz`, `jak dział` i ~30 innych
-- Narzędzia (`qwen3:1,7b`): króckie komendy, proste pytania, wywołnia narzędzi
-- Próg długości obniuny z 300 do 200 znaków — dłużnie wiadomości zawsze idć do 8b
+Umijętnieć Kazdy'ego dostarczany w pakiecie, aktywowany automaticznie po slowach kluczowych:
 
-### 🤔 Tramwaj Dlaczego nie LLM?
-LLM-router (osobny model decydujcy o routingu) dorałby 2-4s latencji na każde zapytanie — wywolanie modelu żeby zdecydować który model wywolić. Dopasowanie słow kluczy jest deterministyczny i ma 0ms narzutu.
+| Umiejczyć | Aktywacja |
+|---|---|
+| `planista zadaj` | zaplanuj, plan, rozbij, kroki, plan dzialania |
+| `stand-up Codzienny` | stand-up, raport dzienny, co zrobione, codziennie |
+| `analizator plików PDF` | pdf, dokument analityczny, dokument streszczy |
+| `monitor systemu` | procesor, ram, gpu, dysk, proces, zasoby |
+| `docker-helper` | docker, kontener, komponuj, dockerfile |
+| `organizator notatek` | pogądkuj notatki, sprzątanie skarbca, duplikaty |
+| `podsumowanie YouTube` | youtube, youtu.be, film streszczowy |
+| `czatnik rss` | rss, karmić, newsy, traić |
+| `ocr` | ocr, tekst ze zdjęcia, skan, odczytaj zdjęcie |
+| `monit obrazowy` | monit do zdjęcia, midjourney, dall-e, stabilna dyfuzja |
+| `tłumacz` | przetłumacz, po polsku, po angiolsku, tłumaczić |
+
+### ✨ Umejętności edytora w interfejsie użytkownika
+
+- Klik w skill w sidebarze → otwiera modal z edytorem
+- Edycja treści skilla (markdown + frontmatter)
+- Zapis → nadpisuje `skarbiec/umejętności/[nazwa].md` i praładowuje natychmiast
+- Usuwanie skilla z potwierdzieniem
+- Tworzenie nowego skilla przyciskiem `+ Nowa umijćtnaść`
+- `Ctrl+S` = Szybki Zapis
+
+### 🔧 Wyszukiwanie w sieci Poprawka
+
+- API Stare `api.duckduckgo.com` zastąpione DDG skrobanie HTML
+- Rzeczywiste wyniki wyszukiwania zamiast tylko "natychmiastowe odpowiedzi"
+- Klucz API Działy bez, regex zapasowy jeśli gołówny parser zwiedzie
 
 ---
 
-*Poprzednie wersje: v0.2.3, v0.2.2, v0.2.1, v0.2.0, v0.1.0*
-
+*Poprzednie wersje: v0.2.5, v0.2.4, v0.2.3, v0.2.2, v0.2.1, v0.2.0, v0.1.0*
