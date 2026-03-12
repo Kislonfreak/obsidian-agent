@@ -60,9 +60,11 @@ export class OllamaClient {
         messages: messages as any,
         tools: tools as any,
         options: {
-          temperature: role === 'tools' ? 0.0 : 0.1,
+          temperature: role === 'tools' ? 0.0 : 0.7,
           num_ctx: role === 'thinking' ? 8192 : 4096,
-          num_predict: role === 'tools' ? 512 : 1024,
+          num_predict: role === 'tools' ? 512 : 2048,
+          repeat_penalty: 1.3,
+          repeat_last_n: 64,
           // Disable thinking tokens for speed (qwen3 specific)
           think: false,
         }

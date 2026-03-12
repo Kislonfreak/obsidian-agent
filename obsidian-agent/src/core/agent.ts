@@ -61,25 +61,33 @@ export class Agent {
   }
 
   private detectRole(input: string): ModelRole {
-    const toolKeywords = ['run', 'execute', 'search', 'find', 'write', 'create', 'list', 'show']
     const lower = input.toLowerCase()
 
-    // Vision if input contains image reference
-    if (lower.includes('image') || lower.includes('screenshot') || lower.includes('zdjęcie')) {
-      return 'vision'
-    }
+    // ── Vision ────────────────────────────────────────────────────
+    const visionKeywords = ['obraz', 'zdjęcie', 'zdjecia', 'zdjęcia', 'foto', 'screenshot', 'screen', 'image', 'photo', 'picture', 'wygląda', 'widzisz', 'na obrazku', 'na zdjęciu']
+    if (visionKeywords.some(k => lower.includes(k))) return 'vision'
 
-    // Tools model for action-oriented requests
-    const isToolRequest = toolKeywords.some(k => lower.includes(k))
-    if (isToolRequest && input.length < 200) return 'tools'
-
-    // Complex thinking only for long or analytical queries
-    const thinkingKeywords = ['dlaczego', 'wyjaśnij', 'explain', 'analyze', 'porównaj', 'compare', 'zaprojektuj', 'architektura', 'przemyśl', 'zaplanuj']
-    if (input.length > 300 || thinkingKeywords.some(k => lower.includes(k))) {
+    // ── Thinking: creative, analytical, linguistic tasks ──────────
+    const thinkingKeywords = [
+      // Polish
+      'dlaczego', 'wyjaśnij', 'wyjaśnienie', 'opisz', 'opowiedz', 'porównaj',
+      'zaprojektuj', 'przemyśl', 'zaplanuj', 'zanalizuj', 'podsumuj', 'streszcz',
+      'przetłumacz', 'po polsku', 'po angielsku', 'na polski', 'na angielski',
+      'napisz', 'stwórz tekst', 'zredaguj', 'popraw', 'ulepsz', 'rozwiń',
+      'co sądzisz', 'jaka jest różnica', 'jak działa', 'jak to działa',
+      'prompt', 'artykuł', 'email', 'wiadomość', 'raport', 'dokumentacja',
+      // English
+      'explain', 'analyze', 'compare', 'design', 'think', 'plan', 'summarize',
+      'translate', 'write', 'create', 'improve', 'refactor', 'review',
+      'what is', 'how does', 'why does', 'difference between',
+      'architecture', 'strategy', 'approach',
+    ]
+    if (input.length > 200 || thinkingKeywords.some(k => lower.includes(k))) {
       return 'thinking'
     }
 
-    // Default: small model (fast)
+    // ── Tools: short commands, actions ────────────────────────────
+    // Everything else — short queries, tool calls, simple questions
     return 'tools'
   }
 
