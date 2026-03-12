@@ -105,41 +105,57 @@ export const TOOLS: Tool[] = [
     async execute({ query, maxResults = 5 }) {
       try {
         const q = encodeURIComponent(query as string)
-        const res = await fetch(`https://api.duckduckgo.com/?q=${q}&format=json&no_html=1&skip_disambig=1`, {
-          headers: { 'User-Agent': 'obsidian-agent/1.0' }
+        // DDG HTML search — works without API key
+        const res = await fetch(`https://html.duckduckgo.com/html/?q=${q}`, {
+          headers: {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+            'Accept': 'text/html'
+          }
         })
-        const data = await res.json() as any
+        const html = await res.text()
 
+        // Extract results from DDG HTML
         const results: string[] = []
+        const resultRegex = /class="result__title"[^>]*>.*?<a[^>]*href="([^"]*)"[^>]*>(.*?)<\/a>.*?class="result__snippet"[^>]*>(.*?)<\/div>/gs
+        let match
+        let count = 0
 
-        // Abstract (instant answer)
-        if (data.Abstract) {
-          results.push(`**${data.Heading}**\n${data.Abstract}\n${data.AbstractURL}`)
+        while ((match = resultRegex.exec(html)) !== null && count < (maxResults as number)) {
+          const url = match[1].replace('/l/?kh=-1&uddg=', '').split('&')[0]
+          const title = match[2].replace(/<[^>]+>/g, '').trim()
+          const snippet = match[3].replace(/<[^>]+>/g, '').trim()
+          if (title && snippet) {
+            results.push(`**${title}**\n${snippet}\n${decodeURIComponent(url)}`)
+            count++
+          }
         }
 
-        // Related topics
-        const topics = (data.RelatedTopics || [])
-          .filter((t: any) => t.Text && t.FirstURL)
-          .slice(0, (maxResults as number) - results.length)
-
-        for (const t of topics) {
-          results.push(`- ${t.Text}\n  ${t.FirstURL}`)
-        }
-
+        // Fallback: try simpler regex if first fails
         if (results.length === 0) {
-          // Fallback: HTML search scrape
-          const htmlRes = await fetch(`https://html.duckduckgo.com/html/?q=${q}`, {
-            headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/120.0.0.0' }
-          })
-          const html = await htmlRes.text()
-          const matches = [...html.matchAll(/class="result__snippet"[^>]*>([^<]+)</g)]
-          const snippets = matches.slice(0, maxResults as number).map(m => m[1].trim())
-          return snippets.length ? snippets.join('\n\n') : 'No results found.'
+          const titleRx = /<a class="result__a"[^>]*href="([^"]*)"[^>]*>(.*?)<\/a>/g
+          const snippetRx = /<a class="result__snippet"[^>]*>(.*?)<\/a>/g
+          const titles: string[] = []
+          const snippets: string[] = []
+          const urls: string[] = []
+
+          let m
+          while ((m = titleRx.exec(html)) !== null) {
+            urls.push(m[1])
+            titles.push(m[2].replace(/<[^>]+>/g, '').trim())
+          }
+          while ((m = snippetRx.exec(html)) !== null) {
+            snippets.push(m[1].replace(/<[^>]+>/g, '').trim())
+          }
+
+          for (let i = 0; i < Math.min(titles.length, maxResults as number); i++) {
+            if (titles[i]) results.push(`**${titles[i]}**\n${snippets[i] || ''}\n${urls[i] || ''}`)
+          }
         }
 
+        if (results.length === 0) return `No results found for: ${query}`
         return results.join('\n\n')
       } catch (err: any) {
-        return `Search error: ${err.message}`
+        return `Web search failed: ${err.message}`
       }
     }
   },

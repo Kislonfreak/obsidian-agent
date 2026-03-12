@@ -157,6 +157,20 @@ function buildLoginHTML(): string {
     <button type="submit">Wejdź</button>
   </form>
 </div>
+<!-- Skill Editor Modal -->
+<div id="skill-modal">
+  <div id="skill-box">
+    <div id="skill-modal-header">
+      <span id="skill-modal-title">✏️ Skill Editor</span>
+      <input id="skill-name-input" placeholder="nazwa-skilla" />
+      <button class="skill-modal-btn save" onclick="saveSkill()">💾 Zapisz</button>
+      <button class="skill-modal-btn del" onclick="deleteSkill()">🗑️ Usuń</button>
+      <button class="skill-modal-btn" onclick="closeSkillModal()">✕</button>
+    </div>
+    <textarea id="skill-content" spellcheck="false"></textarea>
+    <div id="skill-status"></div>
+  </div>
+</div>
 </body>
 </html>`
 }
@@ -248,6 +262,21 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);height:100vh
 #send:hover{opacity:0.9}
 #send:disabled{background:var(--bg3);color:var(--text2);box-shadow:none;cursor:not-allowed}
 
+/* Skill editor modal */
+#skill-modal{display:none;position:fixed;inset:0;background:#000a;z-index:100;align-items:center;justify-content:center}
+#skill-modal.open{display:flex}
+#skill-box{background:var(--bg2);border:1px solid var(--border);border-radius:12px;width:min(680px,95vw);max-height:85vh;display:flex;flex-direction:column;overflow:hidden}
+#skill-modal-header{padding:14px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px}
+#skill-modal-title{font-size:0.95rem;color:var(--accent);font-weight:600;flex:1}
+#skill-name-input{background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:6px 10px;color:var(--text);font-size:0.85rem;width:200px}
+.skill-modal-btn{background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:6px 14px;color:var(--text2);font-size:0.8rem;cursor:pointer}
+.skill-modal-btn:hover{border-color:var(--accent);color:var(--text)}
+.skill-modal-btn.save{background:var(--accent);color:#000;border-color:var(--accent)}
+.skill-modal-btn.save:hover{opacity:0.9}
+.skill-modal-btn.del{border-color:#cc0000;color:#ff4444}
+.skill-modal-btn.del:hover{background:#2d0000}
+#skill-content{flex:1;background:var(--bg3);border:none;color:var(--text);font-family:"Fira Code","Courier New",monospace;font-size:0.8rem;padding:14px;resize:none;outline:none;overflow-y:auto;min-height:300px;line-height:1.6}
+#skill-status{padding:8px 18px;font-size:0.75rem;color:var(--text2);border-top:1px solid var(--border)}
 /* Thinking */
 .thinking-bubble{display:flex;gap:5px;padding:12px 16px;align-items:center}
 .thinking-bubble span{width:7px;height:7px;background:var(--accent);border-radius:50%;animation:pulse 1s infinite;box-shadow:var(--glow)}
@@ -446,8 +475,10 @@ window.recallHistory = (i) => {
 
 // ── Skills ───────────────────────────────────────────────────────────
 function renderSkills(skills) {
-  skillsList.innerHTML = skills.map(s =>
-    '<div class="skill-item" title="' + s.description + '"><span class="skill-dot"></span><span class="skill-name">' + s.name + '</span></div>'
+  const newBtn = '<div class="skill-item" onclick="openNewSkill()" style="opacity:0.6;margin-bottom:4px"><span style="font-size:0.7rem">＋</span><span class="skill-name">Nowy skill</span></div>'
+  skillsList.innerHTML = newBtn + skills.map(s =>
+    '<div class="skill-item" title="' + s.description + '" onclick="openSkill(\'' + s.name + '\')">' +
+    '<span class="skill-dot"></span><span class="skill-name">' + s.name + '</span></div>'
   ).join('')
 }
 
@@ -528,6 +559,93 @@ branchSelect.onchange = () => {
   ws.send(JSON.stringify({ type: 'branch', branch: branchSelect.value }))
 }
 
+// ── Skill Editor ─────────────────────────────────────────────────
+let currentSkillName = null
+
+window.openSkill = async (name) => {
+  currentSkillName = name
+  document.getElementById('skill-modal-title').textContent = '✏️ ' + name
+  document.getElementById('skill-name-input').value = name
+  document.getElementById('skill-status').textContent = 'Ładowanie...'
+  document.getElementById('skill-modal').classList.add('open')
+
+  try {
+    const res = await fetch('/api/skill/' + name)
+    const data = await res.json()
+    document.getElementById('skill-content').value = data.content || ''
+    document.getElementById('skill-status').textContent = 'Plik: vault/skills/' + name + '.md'
+  } catch {
+    document.getElementById('skill-status').textContent = '⚠️ Błąd ładowania'
+  }
+}
+
+window.openNewSkill = () => {
+  currentSkillName = null
+  document.getElementById('skill-modal-title').textContent = '✨ Nowy Skill'
+  document.getElementById('skill-name-input').value = ''
+  document.getElementById('skill-content').value = `---
+name: nowy-skill
+description: Opis co robi skill
+trigger: słowo1, słowo2, słowo3
+---
+
+## Nowy Skill
+
+Instrukcje dla agenta...`
+  document.getElementById('skill-status').textContent = 'Nowy skill — podaj nazwę powyżej'
+  document.getElementById('skill-modal').classList.add('open')
+}
+
+window.saveSkill = async () => {
+  const name = document.getElementById('skill-name-input').value.trim()
+  const content = document.getElementById('skill-content').value
+  if (!name) { document.getElementById('skill-status').textContent = '⚠️ Podaj nazwę'; return }
+
+  const url = currentSkillName ? '/api/skill/' + currentSkillName : '/api/skill'
+  const body = currentSkillName ? { content } : { name, content }
+
+  try {
+    const res = await fetch(url, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(body) })
+    const data = await res.json()
+    if (data.ok) {
+      currentSkillName = data.name || name
+      document.getElementById('skill-status').textContent = '✅ Zapisano — vault/skills/' + currentSkillName + '.md'
+      ws.send(JSON.stringify({ type: 'init' })) // refresh sidebar
+    }
+  } catch {
+    document.getElementById('skill-status').textContent = '⚠️ Błąd zapisu'
+  }
+}
+
+window.deleteSkill = async () => {
+  if (!currentSkillName) return
+  if (!confirm('Usunąć skill "' + currentSkillName + '"?')) return
+  try {
+    await fetch('/api/skill/' + currentSkillName, { method: 'DELETE' })
+    closeSkillModal()
+    ws.send(JSON.stringify({ type: 'init' }))
+  } catch {
+    document.getElementById('skill-status').textContent = '⚠️ Błąd usuwania'
+  }
+}
+
+window.closeSkillModal = () => {
+  document.getElementById('skill-modal').classList.remove('open')
+}
+
+// Close on backdrop click
+document.getElementById('skill-modal').addEventListener('click', (e) => {
+  if (e.target === document.getElementById('skill-modal')) closeSkillModal()
+})
+
+// Ctrl+S to save
+document.addEventListener('keydown', (e) => {
+  if (e.ctrlKey && e.key === 's' && document.getElementById('skill-modal').classList.contains('open')) {
+    e.preventDefault()
+    saveSkill()
+  }
+})
+
 // Drag & drop
 document.body.ondragover = e => e.preventDefault()
 document.body.ondrop = async (e) => {
@@ -539,6 +657,20 @@ document.body.ondrop = async (e) => {
   }
 }
 </script>
+<!-- Skill Editor Modal -->
+<div id="skill-modal">
+  <div id="skill-box">
+    <div id="skill-modal-header">
+      <span id="skill-modal-title">✏️ Skill Editor</span>
+      <input id="skill-name-input" placeholder="nazwa-skilla" />
+      <button class="skill-modal-btn save" onclick="saveSkill()">💾 Zapisz</button>
+      <button class="skill-modal-btn del" onclick="deleteSkill()">🗑️ Usuń</button>
+      <button class="skill-modal-btn" onclick="closeSkillModal()">✕</button>
+    </div>
+    <textarea id="skill-content" spellcheck="false"></textarea>
+    <div id="skill-status"></div>
+  </div>
+</div>
 </body>
 </html>`
 }
@@ -575,6 +707,65 @@ export function startServer(agent: Agent, vault: VaultManager) {
 
   // Auth middleware
   app.use(authMiddleware)
+  app.use(express.json())
+
+  // ── Skill API ────────────────────────────────────────────────────
+  // GET /api/skills — list all skills
+  app.get('/api/skills', async (_req, res) => {
+    const skills = skillLoader.getAllSkills()
+    res.json(skills.map(s => ({ name: s.name, description: s.description, trigger: s.trigger })))
+  })
+
+  // GET /api/skill/:name — get skill content
+  app.get('/api/skill/:name', async (req, res) => {
+    try {
+      const content = await vault.read(`skills/${req.params.name}.md`)
+      res.json({ name: req.params.name, content })
+    } catch {
+      res.status(404).json({ error: 'Skill not found' })
+    }
+  })
+
+  // POST /api/skill/:name — save skill content
+  app.post('/api/skill/:name', async (req, res) => {
+    try {
+      const { content } = req.body
+      if (!content) return res.status(400).json({ error: 'No content' })
+      await vault.write(`skills/${req.params.name}.md`, content)
+      await skillLoader.loadAll()
+      res.json({ ok: true })
+    } catch (err: any) {
+      res.status(500).json({ error: err.message })
+    }
+  })
+
+  // DELETE /api/skill/:name — delete skill
+  app.delete('/api/skill/:name', async (req, res) => {
+    try {
+      const fs = await import('fs/promises')
+      const path = await import('path')
+      const skillPath = path.join(config.vault.path, 'skills', req.params.name + '.md')
+      await fs.unlink(skillPath)
+      await skillLoader.loadAll()
+      res.json({ ok: true })
+    } catch (err: any) {
+      res.status(500).json({ error: err.message })
+    }
+  })
+
+  // POST /api/skill — create new skill
+  app.post('/api/skill', async (req, res) => {
+    try {
+      const { name, content } = req.body
+      if (!name || !content) return res.status(400).json({ error: 'name and content required' })
+      const safeName = name.toLowerCase().replace(/[^a-z0-9-]/g, '-')
+      await vault.write(`skills/${safeName}.md`, content)
+      await skillLoader.loadAll()
+      res.json({ ok: true, name: safeName })
+    } catch (err: any) {
+      res.status(500).json({ error: err.message })
+    }
+  })
 
   // Main UI
   app.get('/', (_req, res) => res.send(buildMainHTML(config.server.wsPort)))
