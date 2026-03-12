@@ -554,7 +554,9 @@ export function startServer(agent: Agent, vault: VaultManager) {
   // Login action
   app.post('/login-action', (req, res) => {
     const pin = (req.body.pin || '').trim()
-    if (pin === config.server.pin) {
+    // Read PIN dynamically — onboarding may have written it after startup
+    const currentPin = process.env.UI_PIN || config.server.pin
+    if (pin === currentPin) {
       const token = createSession()
       res.setHeader('Set-Cookie', `session=${token}; HttpOnly; Path=/; Max-Age=86400`)
       res.redirect('/')

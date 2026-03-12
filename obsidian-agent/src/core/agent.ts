@@ -95,16 +95,14 @@ export class Agent {
     const role: ModelRole = hasImages ? 'vision' : this.detectRole(userInput)
     const messages = await this.buildMessages(userInput, role !== 'thinking')
 
-    // Inject images into last user message
+    // Inject images — Ollama format: images[] as separate field, content stays string
     if (hasImages && attachments) {
-      const lastMsg = messages[messages.length - 1]
-      const content: any[] = [{ type: 'text', text: lastMsg.content }]
-      for (const att of attachments.filter(a => a.type === 'image')) {
-        content.push({ type: 'image_url', image_url: { url: `data:${att.mime};base64,${att.base64}` } })
-      }
-      messages[messages.length - 1] = { role: 'user', content: content as any }
+      const imageList = attachments.filter(a => a.type === 'image').map(a => a.base64)
+      const lastMsg = messages[messages.length - 1] as any
+      lastMsg.images = imageList
     }
-    const toolSchemas = getToolSchemas()
+    // Vision model does not support tool calling
+    const toolSchemas = role === 'vision' ? undefined : getToolSchemas()
 
     // Agent loop
     let iterations = 0

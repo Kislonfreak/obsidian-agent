@@ -83,6 +83,9 @@ export async function runOnboarding(vault: VaultManager, ollama: OllamaClient) {
   rl.close()
 
   await updateEnvFile(pin, secret)
+  // Reload into process.env immediately so server picks it up without restart
+  process.env.UI_PIN = pin
+  process.env.SESSION_SECRET = secret
   console.log('\n  PIN i klucz sesji zapisane do .env')
 
   const date = new Date().toISOString().split('T')[0]
