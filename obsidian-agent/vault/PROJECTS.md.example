@@ -1,0 +1,17 @@
+# Projects
+<!-- Agent reads and updates this file. Edit freely in Obsidian. -->
+
+## Format
+**Project name** `STATUS: active|blocked|done`
+- **Goal:**
+- **Last action:**
+- **Next step:**
+- **Blocker:** (none)
+
+---
+
+## Example Project `STATUS: active`
+- **Goal:** Build something awesome
+- **Last action:** Initialized via onboarding
+- **Next step:** (agent will update)
+- **Blocker:** (none)

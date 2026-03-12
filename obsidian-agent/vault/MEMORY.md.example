@@ -1,0 +1,15 @@
+# Memory
+<!-- Agent appends here automatically. Curate periodically — this loads into every session. -->
+<!-- Format: - `YYYY-MM-DD` [Section] Entry -->
+
+## System
+<!-- Hardware, software, config facts -->
+
+## Fixes
+<!-- Bugs solved and how -->
+
+## Decisions
+<!-- Choices made and why -->
+
+## Disagreements
+<!-- When agent disagreed but executed anyway -->
